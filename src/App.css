@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,body {
+    overflow-x: hidden;
+}
+
+.backDesignS2 {
+    background: url("./assets/Images/bghome.svg");
+}
