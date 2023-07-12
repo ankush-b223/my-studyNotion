@@ -1,6 +1,7 @@
 # my-studyNotion
 
 StudyNotion
+
 StudyNotion is an e-teaching website like Udemy where instructors can put up courses and students can come in, buy, and view courses.
 
 Features
