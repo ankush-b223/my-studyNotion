@@ -33,7 +33,7 @@ app.use(fileUpload({
     tempFileDir:"/tmp",
 }));
 app.use(cors({
-    origin:process.env.CLIENT_BASE_URL,
+    origin:'*',
     credentials:true,
 }));
 
