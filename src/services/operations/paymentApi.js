@@ -6,7 +6,7 @@ import { setPaymentLoading } from "../../slices/courseSlice";
 import { resetCart } from "../../slices/cartSlice";
 import { setUser } from "../../slices/profileSlice";
 
-const RP_KEY = process.env.REACT_RAZORPAY_KEY;
+const RP_KEY = process.env.REACT_APP_RAZORPAY_KEY; //check env here
 
 const loadScript = (src)=>{
 
