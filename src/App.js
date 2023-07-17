@@ -38,7 +38,7 @@ function App() {
 
   useEffect(()=>{
 
-    console.log("Client id google -> ",process.env.REACT_APP_GOOGLE_CID);
+    console.log("Client id google -> ",googleClientId);
   })
 
   return (
