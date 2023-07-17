@@ -25,99 +25,118 @@ import ViewCourse from "./pages/ViewCourse";
 import VideoComponent from "./components/core/viewCourse/VideoComponent";
 import InstructorDashboard from "./components/core/Dashboard/instructorDash";
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { useEffect } from "react";
+
+// import dotenv from "dotenv";
+// dotenv.config();
+
+
+
 function App() {
+  const googleClientId = `${process.env.REACT_APP_GOOGLE_CID}`
+
+  useEffect(()=>{
+
+    console.log("Client id google -> ",process.env.REACT_APP_GOOGLE_CID);
+  })
+
   return (
 
-    <div className='bg-richblack-900 w-screen min-h-screen 
-     relative mx-auto flex flex-col font-inter  '>
+    <GoogleOAuthProvider clientId={googleClientId}>     
 
-      <Navbar/>
-      
-      <Routes>
+      <div className='bg-richblack-900 w-screen min-h-screen 
+      relative mx-auto flex flex-col font-inter  '>
 
-        <Route path="/" element={<Home></Home>}></Route>
-
-        <Route path="/login" element={
-          <AuthRoute>
-            <Login/>
-          </AuthRoute>
-        }/>
-
-
-        <Route path="/signup" element={
-          <AuthRoute>
-            <Signup/>
-          </AuthRoute>
-        }/>
-
-        <Route path="/verify-email" element={
-          <AuthRoute>
-            <VerifyEmail/>
-          </AuthRoute>
-        }/>
-
-        <Route path="/forgot-password" element={
-          <AuthRoute>
-            <ForgotPassword/>
-          </AuthRoute>
-        }/>
-
-
-        <Route path="/resetPassword/:id" element={
-          <AuthRoute>
-            <UpdatePassword/>
-          </AuthRoute>
-        }/>
-
-        <Route path="/about" element={<About/>}/>
-
-        <Route path="/contact" element={<Contact/>}/>
-
-
-
-
-        <Route element= {
-          <PrivateRoute>
-            <Dashboard/>
-          </PrivateRoute>
-           
-        }> {/* add account type validations */}
-          <Route path="/dashboard/my-profile" element={<MyProfile/>}/>
-          <Route path="/dashboard/settings" element={<Settings/>}/>
-          <Route path="/dashboard/enrolled-courses" element={<EnrolledCourses/>}/>
-
-          <Route path="/dashboard/add-course" element={<AddCourse/>}/>
-          <Route path="/dashboard/instructor" element={<InstructorDashboard/>}/>
-          <Route path="/dashboard/my-courses" element={<MyCourses/>}/>
-
-        </Route>
-
+        <Navbar/>
         
+        <Routes>
 
-        <Route path="/category/:categoryName" element={<Category/>}/>
-        <Route path="/course/:courseId" element={<Course/>}/>
-        <Route path="/dashboard/cart" element={<Cart/>}/>
+          <Route path="/" element={<Home></Home>}></Route>
 
-
-        <Route element={
-          <PrivateRoute>
-            <ViewCourse/>
-          </PrivateRoute>
-        }>
-
-          <Route path="/view-course/:courseId/section/:sectionId/subSection/:subSectionId" element={<VideoComponent/>}/>
-
-        </Route>
+          <Route path="/login" element={
+            <AuthRoute>
+              <Login/>
+            </AuthRoute>
+          }/>
 
 
+          <Route path="/signup" element={
+            <AuthRoute>
+              <Signup/>
+            </AuthRoute>
+          }/>
 
-        <Route path="*" element={<Error404/>}/>
+          <Route path="/verify-email" element={
+            <AuthRoute>
+              <VerifyEmail/>
+            </AuthRoute>
+          }/>
+
+          <Route path="/forgot-password" element={
+            <AuthRoute>
+              <ForgotPassword/>
+            </AuthRoute>
+          }/>
+
+
+          <Route path="/resetPassword/:id" element={
+            <AuthRoute>
+              <UpdatePassword/>
+            </AuthRoute>
+          }/>
+
+          <Route path="/about" element={<About/>}/>
+
+          <Route path="/contact" element={<Contact/>}/>
 
 
 
-      </Routes>
 
-    </div>
+          <Route element= {
+            <PrivateRoute>
+              <Dashboard/>
+            </PrivateRoute>
+            
+          }> {/* add account type validations */}
+            <Route path="/dashboard/my-profile" element={<MyProfile/>}/>
+            <Route path="/dashboard/settings" element={<Settings/>}/>
+            <Route path="/dashboard/enrolled-courses" element={<EnrolledCourses/>}/>
+
+            <Route path="/dashboard/add-course" element={<AddCourse/>}/>
+            <Route path="/dashboard/instructor" element={<InstructorDashboard/>}/>
+            <Route path="/dashboard/my-courses" element={<MyCourses/>}/>
+
+          </Route>
+
+          
+
+          <Route path="/category/:categoryName" element={<Category/>}/>
+          <Route path="/course/:courseId" element={<Course/>}/>
+          <Route path="/dashboard/cart" element={<Cart/>}/>
+
+
+          <Route element={
+            <PrivateRoute>
+              <ViewCourse/>
+            </PrivateRoute>
+          }>
+
+            <Route path="/view-course/:courseId/section/:sectionId/subSection/:subSectionId" element={<VideoComponent/>}/>
+
+          </Route>
+
+
+
+          <Route path="*" element={<Error404/>}/>
+
+
+
+        </Routes>
+
+      </div>
+
+    </GoogleOAuthProvider>
   );
 }
 

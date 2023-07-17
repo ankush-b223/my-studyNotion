@@ -3,11 +3,15 @@ import AccountTab from "./AccountTab";
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
 import { setSignupData } from '../../../slices/authSlice';
-import { sendOtp } from '../../../services/operations/authApi';
+import { sendOtp, signupGoogle } from '../../../services/operations/authApi';
 import { useNavigate } from 'react-router-dom';
 import {AiOutlineEye,AiOutlineEyeInvisible} from "react-icons/ai";
 
 import {ACCOUNT_TYPE} from "../../../utilities/constants";
+
+
+import { GoogleLogin } from '@react-oauth/google';
+import jwtDecode from 'jwt-decode';
 
 
 const SignupForm = () => {
@@ -35,6 +39,28 @@ const SignupForm = () => {
     reset()
   }
 
+
+
+  const googleSignUpSuccess = (jwt)=>{
+    const result = jwtDecode(jwt);
+
+    const signUpData = {
+      email:result?.email,
+      lastName:result?.family_name,
+      firstName:result?.given_name,
+      iss:"https://accounts.google.com",
+      image:result?.picture,
+      contactNumber: result?.phone_number ? result?.phone_number : null,
+
+    };
+
+    console.log("Resultant Data-> " , signUpData);
+
+    //call service
+    dispatch(signupGoogle(signUpData,navigate))
+
+  }
+
   const tabData = [
     {
       id: 1,
@@ -52,7 +78,7 @@ const SignupForm = () => {
   return (
 
     <div className='flex flex-col justify-center items-start text-richblack-5
-     text-xs gap-3 w-[100%] m-auto'>
+     text-xs gap-3 gap-y-12 w-[100%] m-auto relative'>
 
       <AccountTab tabData={tabData}
        field={accountType} setField={setAccountType}/>
@@ -167,6 +193,14 @@ const SignupForm = () => {
         hover:scale-105 transition-all duration-200 w-[100%] '>Create Account</button>
 
       </form>
+
+      <div className=' text-richblack-5 absolute right-80 -translate-x-3 text-xs bottom-16 translate-y-2 '> OR</div>
+
+      <GoogleLogin
+        onSuccess={(res)=>googleSignUpSuccess(res?.credential)}
+        onError={(err)=>console.log("Err in google sign up",err)}
+        
+      />
 
   </div>
 

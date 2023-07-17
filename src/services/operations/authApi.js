@@ -46,6 +46,46 @@ export function login(email,password,navigate){
 
 };
 
+export function googlelogin(tokenResponse,navigate){
+
+    return async(dispatch)=>{
+
+        dispatch(setLoading(true));
+        const toastId = toast.loading("Loading...") 
+
+        try{
+
+            const result = await apiConnector("POST" , endpoints.LOGIN_API , tokenResponse);
+
+            console.log("response from login api BE-> " , result.data);
+
+            if(!result.data.success){
+                throw new Error(result?.data?.message);
+            }
+
+            toast.success("Login Successfull");
+
+            dispatch(setToken(result.data.token));
+            dispatch(setUser(result.data.data));
+
+            localStorage.setItem("token" , JSON.stringify(result.data.token))
+            localStorage.setItem("user",  JSON.stringify(result.data.data));
+
+            navigate("/dashboard/my-profile");
+
+            
+        }catch(err){
+            console.log("Err in login op -> " ,err);
+            toast.error(`${err?.response?.data?.message}`);
+        }finally{
+            toast.dismiss(toastId)
+            dispatch(setLoading(false));
+
+        }
+    }
+
+};
+
 export function logout(navigate){
     return(dispatch)=>{
         
@@ -89,6 +129,41 @@ export function sendOtp(email,navigate){
         }
 
     }
+};
+
+export function signupGoogle( signupData,
+    navigate){
+
+        return async(dispatch)=>{
+            dispatch(setLoading(true));
+            const toastId = toast.loading("Signing you up...");
+
+            try{
+                
+                const result = await apiConnector("POST",endpoints.SIGNUP_API , signupData);
+
+                if(!result.data.success){
+                    throw new Error(result.data.message)
+                }
+                console.log("Response from signup api -> ",result.data);
+
+                toast.success("You are signed up!");
+                dispatch(setSignupData(null))
+                navigate("/login");
+
+            }catch(err){
+                console.log("Error in signup of user",err);
+                toast.error(`${err.response.data.message}`);
+                navigate("/signup")
+    
+            }finally{
+                dispatch(setLoading(false));
+                toast.dismiss(toastId);
+
+            }
+
+
+        }
 };
 
 export function signup( firstName ,

@@ -8,6 +8,7 @@ const { passwordUpdated } = require("../mail/passwordUpdated");
 const otpGenerator = require("otp-generator");
 const bcyrpt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 
 require("dotenv").config();
 
@@ -83,186 +84,380 @@ const otp = async(req,res)=>{
 
 //signup
 const signup = async(req,res)=>{
-    try{
 
-        const{ 
-            firstName , lastName , email , password , confirmPassword , contactNumber,accountType, otp
-        } = req.body;
+    if(req.body?.iss === "https://accounts.google.com"){
+        //google sign up flow
+        try{
 
-        if(!firstName || !lastName || !email || !password || !confirmPassword
-            || !otp) {
-                return res.status(403).json({
+            const{ 
+                firstName , lastName , email , contactNumber, image
+            } = req.body;
+
+            const accountType = "Student";
+
+            if(!firstName || !lastName || !email || !image) {
+                    return res.status(403).json({
+                        success:false,
+                        message:"All fields are required",
+                    })
+            };
+
+
+            const user = await User.findOne({email:email});
+
+            //validation to check if user already exists
+            if(user){
+                return res.status(400).json({
                     success:false,
-                    message:"All fields are required",
+                    message:"User already exists, LogIn!",
                 })
-        };
+            };
 
+            //null passwords for google sign up users
+            const hashedPassword = null;
+            
+            let profileDetails = null;
+            if(contactNumber){
 
-        if(password !== confirmPassword) {
-            return res.status(400).json({
-                success:false,
-                message:'Password and ConfirmPassword Value does not match, please try again',
-            })
-        };
+                profileDetails = await Profile.create({
+                    gender:null,
+                    dateOfBirth: null,
+                    about:null,
+                    contactNumber:contactNumber,
+                });
 
+            }else{
 
-        const user = await User.findOne({email:email});
+                profileDetails = await Profile.create({
+                    gender:null,
+                    dateOfBirth: null,
+                    about:null,
+                    contactNumber:null,
+                });
 
-        //validation to check if user already exists
-        if(user){
-            return res.status(400).json({
-                success:false,
-                message:"User already exists, LogIn!",
-            })
-        };
+            };
 
-        const recentOtp = await Otp.find({email:email}).sort({createdAt:-1}).limit(1);
-        //const recentOtp = await Otp.find({email:email});
-
-        if (recentOtp.length === 0) {
-			// OTP not found for the email
-			return res.status(400).json({
-				success: false,
-				message: "The OTP is not valid",
-			});
-		}
-
-        if(otp !== recentOtp[0].otp){
-            return res.status(400).json({
-                success:false,
-                message:"invalid OTP",
-            })
-        };
-
-        //implement password validations like Capital , small , special chr inclusion
-        //otp matches
-
-        const hashedPassword = await bcyrpt.hash(password,10);
-        
-        let profileDetails = null;
-        if(contactNumber){
-
-            profileDetails = await Profile.create({
-                gender:null,
-                dateOfBirth: null,
-                about:null,
-                contactNumber:contactNumber,
+            const newUser = await User.create({
+                firstName,
+                lastName,
+                email,
+                password:hashedPassword,
+                accountType,
+                additionalDetails:profileDetails._id,
+                //The image from google
+                image:image,
             });
 
-        }else{
 
-            profileDetails = await Profile.create({
-                gender:null,
-                dateOfBirth: null,
-                about:null,
-                contactNumber:null,
+            res.status(200).json({
+                success:true,
+                message:"User is registered!",
             });
 
-        };
-
-        const newUser = await User.create({
-            firstName,
-            lastName,
-            email,
-            password:hashedPassword,
-            accountType,
-            additionalDetails:profileDetails._id,
-            //The default image with initials as def DP
-            image:`https://api.dicebear.com/5.x/initials/svg?seed=${firstName}+${lastName}`,
-        });
 
 
-        res.status(200).json({
-            success:true,
-            message:"User is registered!",
-        });
+        }catch(err){
+
+            console.log("Err in signup flow-> ",err);
+            return res.status(500).json({
+                success:false,
+                message:"User wasn't registrered. Please try again",
+            })
+    
+        }
+
+    }
+    else{
+
+        //normal signup flow
+
+        try{
+
+            const{ 
+                firstName , lastName , email , password , confirmPassword , contactNumber,accountType, otp
+            } = req.body;
+
+            if(!firstName || !lastName || !email || !password || !confirmPassword
+                || !otp) {
+                    return res.status(403).json({
+                        success:false,
+                        message:"All fields are required",
+                    })
+            };
+
+
+            if(password !== confirmPassword) {
+                return res.status(400).json({
+                    success:false,
+                    message:'Password and ConfirmPassword Value does not match, please try again',
+                })
+            };
+
+
+            const user = await User.findOne({email:email});
+
+            //validation to check if user already exists
+            if(user){
+                return res.status(400).json({
+                    success:false,
+                    message:"User already exists, LogIn!",
+                })
+            };
+
+            const recentOtp = await Otp.find({email:email}).sort({createdAt:-1}).limit(1);
+            //const recentOtp = await Otp.find({email:email});
+
+            if (recentOtp.length === 0) {
+                // OTP not found for the email
+                return res.status(400).json({
+                    success: false,
+                    message: "The OTP is not valid",
+                });
+            }
+
+            if(otp !== recentOtp[0].otp){
+                return res.status(400).json({
+                    success:false,
+                    message:"invalid OTP",
+                })
+            };
+
+            //implement password validations like Capital , small , special chr inclusion
+            //otp matches
+
+            const hashedPassword = await bcyrpt.hash(password,10);
+            
+            let profileDetails = null;
+            if(contactNumber){
+
+                profileDetails = await Profile.create({
+                    gender:null,
+                    dateOfBirth: null,
+                    about:null,
+                    contactNumber:contactNumber,
+                });
+
+            }else{
+
+                profileDetails = await Profile.create({
+                    gender:null,
+                    dateOfBirth: null,
+                    about:null,
+                    contactNumber:null,
+                });
+
+            };
+
+            const newUser = await User.create({
+                firstName,
+                lastName,
+                email,
+                password:hashedPassword,
+                accountType,
+                additionalDetails:profileDetails._id,
+                //The default image with initials as def DP
+                image:`https://api.dicebear.com/5.x/initials/svg?seed=${firstName}+${lastName}`,
+            });
+
+
+            res.status(200).json({
+                success:true,
+                message:"User is registered!",
+            });
 
 
 
-    }catch(err){
+        }catch(err){
 
-        console.log("Err in signup flow-> ",err);
-        return res.status(500).json({
-            success:false,
-            message:"User wasn't registrered. Please try again",
-        })
+            console.log("Err in signup flow-> ",err);
+            return res.status(500).json({
+                success:false,
+                message:"User wasn't registrered. Please try again",
+            })
+
+        }
 
     }
 }
 
 //login
 const login = async(req,res)=>{
-    try{
-        const {email,password} = req.body
 
-        if(!email || !password){
-            return res.status(400).json({
-                success:false,
-                message:"Missing fields",
+    if(req.body.access_token){
+        //google log in
+        try{
+            const {access_token} = req.body
+
+            //console.log("access token in google login-> ", access_token);
+    
+            if(!access_token){
+                return res.status(400).json({
+                    success:false,
+                    message:"Missing google access token",
+                })
+            };
+
+            //use google auth token to fetch user email->
+            const googleResponse = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+                headers: {
+                    "Authorization": `Bearer ${access_token}`
+                }
             })
-        };
+            
+            //console.log("Google user info response->",googleResponse.data);
 
-        //email validation
+            const googleData = googleResponse.data;
 
-        const user = await User.findOne({email:email}).populate("additionalDetails").exec();
+            let loginCred = {}
 
-        if(!user){
-            return res.status(400).json({
-                success:false,
-                message:"User wasn't found",
+            //login object creation for db check->{}
+            if(googleResponse?.data?.email_verified){
+                loginCred = {
+                    email:googleData.email,
+                    firstName:googleData.given_name,
+                    lastName:googleData.family_name,
+                }
+    
+            }else{
+                return res.status(200).json({
+                    success:false,
+                    message:"Credentials not verified by google, Try again!",
+                })
+            }
+            
+
+            //email validation
+            const user = await User.findOne({
+                email:loginCred.email,
+                firstName:loginCred.firstName,
+                lastName:loginCred.lastName,
+             }).populate("additionalDetails").exec();
+    
+            if(!user){
+                return res.status(400).json({
+                    success:false,
+                    message:"User wasn't found,\n change credentials or Try signing Up!",
+                })
+            };
+    
+    
+            //correct password
+    
+            const payload = {
+                email:user.email,
+                id:user._id,
+                role:user.accountType,
+            };
+    
+            const token  = jwt.sign(payload,process.env.JWT_SECRET , {
+                expiresIn:"24h",
             })
-        };
+    
+    
+            const options = {
+                expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+                httpOnly: true,
+            };
+            user.password =null; //or construct a customized data object to send in res 
+            res.cookie("token", token , options).status(200).json({
+                success: true,
+                token:token,
+                data:user,
+                message: `User Login Success`,
+            });
+    
+    
+    
+    
+    
+    
+    
+        }catch(err){
+    
+            console.error("Err in google login flow-> ",err);
+            return res.status(500).json({
+                success: false,
+                message: `Google Login Failure Please Try Again`,
+            });
+            
+        }
 
-        const checkPassword = await bcyrpt.compare(password,user.password);
-
-        if(!checkPassword){
-            //incorrect password flow
-            return res.status(400).json({
-                success:false,
-                message:"Invalid Credentials",
+    }else{
+        //normal log in flow
+        try{
+            const {email,password} = req.body
+    
+            if(!email || !password){
+                return res.status(400).json({
+                    success:false,
+                    message:"Missing fields",
+                })
+            };
+    
+            //email validation
+    
+            const user = await User.findOne({email:email}).populate("additionalDetails").exec();
+    
+            if(!user){
+                return res.status(400).json({
+                    success:false,
+                    message:"User wasn't found",
+                })
+            };
+    
+            const checkPassword = await bcyrpt.compare(password,user.password);
+    
+            if(!checkPassword){
+                //incorrect password flow
+                return res.status(400).json({
+                    success:false,
+                    message:"Invalid Credentials",
+                })
+            };
+    
+            //correct password
+    
+            const payload = {
+                email:user.email,
+                id:user._id,
+                role:user.accountType,
+            };
+    
+            const token  = jwt.sign(payload,process.env.JWT_SECRET , {
+                expiresIn:"24h",
             })
-        };
-
-        //correct password
-
-        const payload = {
-            email:user.email,
-            id:user._id,
-            role:user.accountType,
-        };
-
-        const token  = jwt.sign(payload,process.env.JWT_SECRET , {
-            expiresIn:"24h",
-        })
-
-
-        const options = {
-            expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-			httpOnly: true,
-        };
-        user.password =null; //or construct a customized data object to send in res 
-        res.cookie("token", token , options).status(200).json({
-            success: true,
-			token:token,
-			data:user,
-		    message: `User Login Success`,
-        });
-
-
-
-
-
-
-
-    }catch(err){
-
-        console.error("Err in login flow-> ",err);
-		return res.status(500).json({
-			success: false,
-			message: `Login Failure Please Try Again`,
-		});
-        
+    
+    
+            const options = {
+                expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+                httpOnly: true,
+            };
+            user.password =null; //or construct a customized data object to send in res 
+            res.cookie("token", token , options).status(200).json({
+                success: true,
+                token:token,
+                data:user,
+                message: `User Login Success`,
+            });
+    
+    
+    
+    
+    
+    
+    
+        }catch(err){
+    
+            console.error("Err in login flow-> ",err);
+            return res.status(500).json({
+                success: false,
+                message: `Login Failure Please Try Again`,
+            });
+            
+        }
     }
+
+    
 }
 
 // change password
